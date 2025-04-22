@@ -34,6 +34,9 @@
     <h2>Live Stream Receiver</h2>
     <video id="remoteVideo" autoplay playsinline></video>
     <div>
+      <button id="scanButton" onclick="startScan()">
+        Quét thiết bị Bluetooth
+      </button>
       <button id="joinButton" onclick="sendRequest()" disabled>
         Yêu cầu stream
       </button>
@@ -46,76 +49,61 @@
       const joinButton = document.getElementById("joinButton");
       const stopButton = document.getElementById("stopButton");
       const remoteVideo = document.getElementById("remoteVideo");
-      const rasp_ip = '192.168.23.218'
       let pc = null;
-      let signalingServer = null;
+      let bluetoothClient = null;
       let iceCandidatesQueue = [];
+      let writeCharacteristic = null;
 
       function updateStatus(message) {
         statusEl.textContent = message;
         console.log(message);
       }
 
-      function initConnection() {
-        // Khởi tạo WebSocket
-        signalingServer = new WebSocket(`ws://${rasp_ip}:8888/ws`);
+      // Quét thiết bị Bluetooth và kết nối với Raspberry Pi
+      async function startScan() {
+        try {
+          updateStatus("Đang quét thiết bị Bluetooth...");
+          // Quét các thiết bị Bluetooth có hỗ trợ dịch vụ mà chúng ta cần
+          const device = await navigator.bluetooth.requestDevice({
+            filters: [{ services: ["0000XXXX-0000-1000-8000-00805f9b34fb"] }], // UUID của dịch vụ Bluetooth cần tìm
+          });
 
-        signalingServer.onopen = () => {
-          updateStatus("Đã kết nối đến server. Sẵn sàng yêu cầu stream.");
-          joinButton.disabled = false;
-        };
+          updateStatus("Đã tìm thấy thiết bị: " + device.name);
+          bluetoothClient = await device.gatt.connect();
+          const service = await bluetoothClient.getPrimaryService(
+            "0000XXXX-0000-1000-8000-00805f9b34fb"
+          );
+          writeCharacteristic = await service.getCharacteristic(
+            "0000XXXX-0000-1000-8000-00805f9b34fb"
+          );
 
-        signalingServer.onerror = (error) => {
-          updateStatus("Lỗi kết nối WebSocket: " + error);
-        };
+          updateStatus("Đã kết nối đến thiết bị Bluetooth.");
 
-        // Nhận tín hiệu từ signaling server
-        signalingServer.onmessage = async (message) => {
-          try {
-            let data = JSON.parse(message.data);
-            console.log("Nhận message từ server:", data.type);
-
-            if (data.type === "offer") {
-              await handleOffer(data.offer);
-            } else if (data.type === "candidate") {
-              await handleCandidate(data.candidate);
-            }
-          } catch (error) {
-            updateStatus("Lỗi xử lý tin nhắn: " + error);
-          }
-        };
-
-        // Lắng nghe sự kiện đóng WebSocket
-        signalingServer.onclose = () => {
-          updateStatus("Kết nối WebSocket đã đóng");
-          joinButton.disabled = true;
-          stopButton.disabled = true;
-          cleanup();
-        };
+          joinButton.disabled = false; // Kích hoạt nút yêu cầu stream
+        } catch (error) {
+          updateStatus("Lỗi khi quét thiết bị Bluetooth: " + error);
+        }
       }
 
       async function createPeerConnection() {
-        // Khởi tạo RTCPeerConnection
         const configuration = {
           iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
         };
-
         pc = new RTCPeerConnection(configuration);
 
-        // Nhận track video từ bên gửi
         pc.ontrack = (event) => {
           updateStatus("Đã nhận luồng video");
           remoteVideo.srcObject = event.streams[0];
           stopButton.disabled = false;
         };
 
-        // Gửi ICE Candidate về cho bên gửi
         pc.onicecandidate = (event) => {
           if (event.candidate) {
             console.log("Tạo ICE candidate local");
-            signalingServer.send(
-              JSON.stringify({ type: "candidate", candidate: event.candidate })
-            );
+            sendBluetoothMessage({
+              type: "candidate",
+              candidate: event.candidate,
+            });
           }
         };
 
@@ -142,20 +130,16 @@
           console.log("Đã thêm ICE candidate từ hàng đợi");
         }
 
-        // Tạo Answer và gửi lại cho bên gửi
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
 
-        signalingServer.send(
-          JSON.stringify({
-            type: "answer",
-            answer: {
-              sdp: pc.localDescription.sdp,
-              type: pc.localDescription.type,
-            },
-            candidates: [], // Thêm mảng candidates rỗng để phù hợp với code server
-          })
-        );
+        sendBluetoothMessage({
+          type: "answer",
+          answer: {
+            sdp: pc.localDescription.sdp,
+            type: pc.localDescription.type,
+          },
+        });
 
         updateStatus("Đã gửi Answer đến server");
       }
@@ -166,12 +150,26 @@
             await pc.addIceCandidate(new RTCIceCandidate(candidate));
             console.log("Đã thêm ICE candidate từ server");
           } else {
-            // Thêm vào hàng đợi nếu pc hoặc remoteDescription chưa sẵn sàng
             iceCandidatesQueue.push(candidate);
             console.log("Thêm ICE candidate vào hàng đợi");
           }
         } catch (error) {
           console.error("Lỗi khi thêm ICE candidate:", error);
+        }
+      }
+
+      async function sendBluetoothMessage(message) {
+        try {
+          if (!writeCharacteristic) {
+            throw new Error("Characteristic chưa được khởi tạo.");
+          }
+
+          const encoder = new TextEncoder();
+          const data = encoder.encode(JSON.stringify(message));
+          await writeCharacteristic.writeValue(data);
+          console.log("Đã gửi tín hiệu:", message);
+        } catch (error) {
+          console.error("Lỗi khi gửi tín hiệu qua Bluetooth:", error);
         }
       }
 
@@ -183,20 +181,18 @@
         createPeerConnection().then(() => {
           updateStatus("Đang gửi yêu cầu join");
           joinButton.disabled = true;
-          signalingServer.send(JSON.stringify({ type: "join" }));
+          sendBluetoothMessage({ type: "join" });
         });
       }
 
       function cleanup(closeSocket = true) {
         updateStatus("Đang ngắt kết nối...");
 
-        // Dừng tất cả các track video
         if (remoteVideo.srcObject) {
           remoteVideo.srcObject.getTracks().forEach((track) => track.stop());
           remoteVideo.srcObject = null;
         }
 
-        // Đóng kết nối WebRTC
         if (pc) {
           pc.onicecandidate = null;
           pc.ontrack = null;
@@ -205,27 +201,14 @@
           pc = null;
         }
 
-        // Đóng kết nối WebSocket nếu cần
-        if (
-          closeSocket &&
-          signalingServer &&
-          signalingServer.readyState === WebSocket.OPEN
-        ) {
-          signalingServer.close();
-          signalingServer = null;
-        } else if (!closeSocket) {
-          // Reset các nút nếu chỉ dọn dẹp WebRTC nhưng giữ WebSocket
-          joinButton.disabled = false;
-          stopButton.disabled = true;
-          updateStatus("Đã ngắt kết nối stream");
+        if (bluetoothClient && closeSocket) {
+          bluetoothClient.disconnect();
+          bluetoothClient = null;
         }
       }
 
       // Lắng nghe sự kiện unload trang để làm sạch trước khi rời đi
       window.addEventListener("beforeunload", () => cleanup(true));
-
-      // Khởi tạo kết nối khi trang load
-      initConnection();
     </script>
   </body>
 </html>

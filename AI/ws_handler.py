@@ -34,6 +34,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
                 # Dự đoán lỗi
                 label = squat_model.predict(features)
+                print(f"loi:  {label}")
                 label_counts.append(label)
 
                 # Dự đoán đếm squat
@@ -44,12 +45,9 @@ async def websocket_endpoint(websocket: WebSocket):
                     # Xử lý lỗi phổ biến nhất trong chuỗi
                     if label_counts:
 
-                        # most_common_label = Counter(label_counts).most_common(1)[0][0]
-
-                        counter = Counter(label_counts)
-
                         counter = Counter(label_counts)
                         total = sum(counter.values())
+                        print(f'total: {total}')
 
                         if counter.get(ERROR_BACK_BEND, 0) >= 3:
                             most_common_label = ERROR_BACK_BEND
@@ -57,12 +55,12 @@ async def websocket_endpoint(websocket: WebSocket):
                         else:
                             most_common = counter.most_common()
 
-                            first_label, first_count = most_common[0]
+                            first_label, _ = most_common[0]
 
                             if first_label == CORRECT and len(most_common) > 1:
                                 second_label, second_count = most_common[1]
 
-                                if (second_count / total) > 0.3:
+                                if (second_count / total) > 0.4:
                                     most_common_label = second_label
                                 else:
                                     most_common_label = first_label
@@ -74,7 +72,12 @@ async def websocket_endpoint(websocket: WebSocket):
 
                         # Gửi phản hồi về client
                         await websocket.send_text(
-                            json.dumps({"count": count, "error": error_message})
+                            json.dumps(
+                                {
+                                    "repNum": count, 
+                                    "content": error_message
+                                 }
+                            )
                         )
 
                         label_counts.clear()

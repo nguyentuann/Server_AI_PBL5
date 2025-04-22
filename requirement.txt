@@ -1,4 +1,7 @@
 tensorflow 
-fastapi uvicorn 
-websockets numpy 
+fastapi 
+uvicorn 
+websockets 
+numpy 
 opencv-python
+pandas
