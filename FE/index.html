@@ -40,7 +40,7 @@
       <button id="stopButton" onclick="cleanup()" disabled>Ngừng stream</button>
     </div>
     <div id="status" class="status">Đang kết nối đến server...</div>
-
+    <!-- 
     <script>
       const statusEl = document.getElementById("status");
       const joinButton = document.getElementById("joinButton");
@@ -122,6 +122,7 @@
         pc.oniceconnectionstatechange = () => {
           updateStatus("Trạng thái ICE: " + pc.iceConnectionState);
           if (
+
             pc.iceConnectionState === "disconnected" ||
             pc.iceConnectionState === "failed" ||
             pc.iceConnectionState === "closed"
@@ -227,5 +228,7 @@
       // Khởi tạo kết nối khi trang load
       initConnection();
     </script>
+  -->
+    <script src="handleWebRTC.js"></script>
   </body>
 </html>

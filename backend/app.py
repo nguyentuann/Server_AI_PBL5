@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 import uvicorn
-from ws_handler import websocket_endpoint
+from backend.ws_handler import websocket_endpoint
 
 app = FastAPI()
 

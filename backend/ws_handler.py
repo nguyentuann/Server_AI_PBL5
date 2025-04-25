@@ -9,7 +9,7 @@ from collections import Counter
 from fastapi import WebSocket
 from AI.model_detection import squat_model
 from AI.model_count import squat_count
-from convert_data import convertData
+from AI.convert_data import convertData
 from constant.labels import labels_dict
 
 CORRECT = np.int64(0)
@@ -47,7 +47,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
                         counter = Counter(label_counts)
                         total = sum(counter.values())
-                        print(f'total: {total}')
+                        print(f"total: {total}")
 
                         if counter.get(ERROR_BACK_BEND, 0) >= 3:
                             most_common_label = ERROR_BACK_BEND
@@ -72,12 +72,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
                         # Gửi phản hồi về client
                         await websocket.send_text(
-                            json.dumps(
-                                {
-                                    "repNum": count, 
-                                    "content": error_message
-                                 }
-                            )
+                            json.dumps({"repNum": count, "content": error_message})
                         )
 
                         label_counts.clear()
