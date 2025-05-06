@@ -1,13 +1,15 @@
-import pika
 import os
 import sys
-import numpy as np
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import json
+import numpy as np
+import pika
 from collections import Counter
 from fastapi import WebSocket
+
+
 from AI.model_detection import squat_model
 from AI.model_count import squat_count
 from AI.convert_data import convertData
@@ -98,6 +100,7 @@ def send_result(ch, props, body):
 
 
 def start_server():
+    print("tất cả ok, chờ tin nhắn...")
     connection = pika.BlockingConnection(
         pika.ConnectionParameters(
             host=ip_serverAI,
@@ -111,5 +114,5 @@ def start_server():
     channel.start_consuming()
 
 
-if "__name__" == "__main__":
+if __name__== "__main__":
     start_server()

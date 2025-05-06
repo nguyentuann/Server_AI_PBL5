@@ -2,6 +2,7 @@ import os
 
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 
+
 import pickle
 import tensorflow as tf
 from tensorflow.keras.models import load_model  # type: ignore
@@ -40,8 +41,8 @@ class Attention(Layer):
 class SquatDetectionModel:
     def __init__(
         self,
-        scaler_path="GRU/scaler_GRU.pkl",
-        model_path="GRU/Squat_detection_GRU.keras",
+        scaler_path = os.path.join(os.path.dirname(__file__), ".", "GRU", "scaler_GRU.pkl"),
+        model_path=os.path.join(os.path.dirname(__file__), ".", "GRU", "Squat_detection_GRU.keras"),
     ):
         self.scaler = self.load_scaler(scaler_path)
         self.model = self.load_model(model_path)

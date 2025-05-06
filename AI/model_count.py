@@ -1,7 +1,7 @@
 import os
 from constant.important_keypoint import IMPORTANT_KP
 
-os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0" 
 
 import pickle
 import pandas as pd
@@ -10,8 +10,14 @@ import pandas as pd
 class SquatCountModel:
     def __init__(
         self,
-        scaler_path="UP_DOWN/scaler.pkl",
-        model_path="UP_DOWN/LR_Up_Down_model.pkl",
+        # scaler_path="UP_DOWN/scaler.pkl",
+        # model_path="UP_DOWN/LR_Up_Down_model.pkl",
+        scaler_path=os.path.join(
+            os.path.dirname(__file__), ".", "UP_DOWN", "scaler.pkl"
+        ),
+        model_path=os.path.join(
+            os.path.dirname(__file__), ".", "UP_DOWN", "LR_Up_Down_model.pkl"
+        ),
         important_kp=None,
     ):
         self.pre_pre_state = "Up"
