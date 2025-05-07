@@ -3,3 +3,6 @@
 
 # Bỏ qua thư mục test
 test/
+
+cache/
+

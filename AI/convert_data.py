@@ -7,15 +7,19 @@ from constant.important_keypoint import IMPORTANT_KP
 
 
 def convertData(keypoints_data):
-    features = []
-    for kp in IMPORTANT_KP:
-        point = keypoints_data.get(kp, None)
-        if point is not None:
-            x, y, z, visibility = (
-                point["x"],
-                point["y"],
-                point["z"],
-                point["visibility"],
-            )
-            features.extend([x, y, z, visibility])
-    return np.array(features).reshape(1, -1)
+    try:
+        features = []
+        for kp in IMPORTANT_KP:
+            point = keypoints_data.get(kp, None)
+            if point is not None:
+                x, y, z, visibility = (
+                    point["x"],
+                    point["y"],
+                    point["z"],
+                    point["visibility"],
+                )
+                features.extend([x, y, z, visibility])
+        return np.array(features).reshape(1, -1)    
+    except Exception as e:
+        print(f"Error in convertData: {e}")
+        return None
