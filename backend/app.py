@@ -1,5 +1,5 @@
 
-from backend.rabbitMQ import start_server
+from rabbitMQ import start_server
 
 
 if __name__ == "__main__":

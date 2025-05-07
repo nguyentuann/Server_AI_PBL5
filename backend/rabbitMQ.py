@@ -108,11 +108,25 @@ def process_keypoints(ch, method, props, body):
 
 
 def start_server():
-    print("🚀 Server AI sẵn sàng chờ dữ liệu...")
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host=ip_serverAI))
-    channel = connection.channel()
+    connection = None
+    channel = None
 
-    # bắt đầu nhận dữ liệu từ processing.queue
-    channel.basic_consume(queue=PROCESSING_QUEUE, on_message_callback=process_keypoints)
+    try:
+        print("🚀 Server AI sẵn sàng chờ dữ liệu...")
+        connection = pika.BlockingConnection(
+            pika.ConnectionParameters(host=ip_serverAI)
+        )
+        channel = connection.channel()
 
-    channel.start_consuming()
+        # bắt đầu nhận dữ liệu từ processing.queue
+        channel.basic_consume(
+            queue=PROCESSING_QUEUE, on_message_callback=process_keypoints
+        )
+
+        channel.start_consuming()
+    except KeyboardInterrupt:
+        print("🛑 Ngắt kết nối RabbitMQ")
+        connection.close()
+    except Exception as e:
+        print(f"❌ Lỗi kết nối RabbitMQ: {e}")
+        connection.close()
