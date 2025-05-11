@@ -15,7 +15,7 @@ from AI.model_count import squat_count
 from AI.convert_data import convertData
 from constant.labels import labels_dict
 
-ip_serverAI = "192.168.1.36"
+ip_server_backend = "192.168.33.183"
 
 CORRECT = np.int64(0)
 ERROR_BACK_BEND = np.int64(5)
@@ -78,26 +78,28 @@ def process_keypoints(ch, method, props, body):
                     else:
                         most_common_label = first_label
 
-            print(f"🧠 Lỗi phổ biến: {most_common_label}")
+            if most_common_label != CORRECT:
 
-            error_message = labels_dict.get(most_common_label, "Unknown")
-            print(f"⚠️ Lỗi phổ biến: {error_message}")
+                error_message = labels_dict.get(most_common_label, "Unknown")
+                print(f"⚠️ Lỗi phổ biến: {error_message}")
 
-            result = {
-                "rep_num": count,
-                "content": error_message,
-                "time": time.ctime(),
-                "user_id": user_id,
-            }
+                result = {
+                    "rep_num": count,
+                    "content": error_message,
+                    "time": time.ctime(),
+                    "user_id": user_id,
+                }
 
-            # Gửi kết quả về result.queue thông qua exchange
-            ch.basic_publish(
-                exchange=RESULT_EXCHANGE_NAME,
-                routing_key=RESULT_ROUTING,
-                body=json.dumps(result),
-            )
-            labels_count.clear()
-            return
+                # Gửi kết quả về result.queue thông qua exchange
+                ch.basic_publish(
+                    exchange=RESULT_EXCHANGE_NAME,
+                    routing_key=RESULT_ROUTING,
+                    body=json.dumps(result),
+                )
+                labels_count.clear()
+                return
+            else:
+                pass
 
         # Xác nhận đã xử lý
         ch.basic_ack(delivery_tag=method.delivery_tag)
@@ -114,7 +116,7 @@ def start_server():
     try:
         print("🚀 Server AI sẵn sàng chờ dữ liệu...")
         connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host=ip_serverAI)
+            pika.ConnectionParameters(host=ip_server_backend)
         )
         channel = connection.channel()
 
