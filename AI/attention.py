@@ -1,15 +1,8 @@
-from fastapi import FastAPI, WebSocket
-import uvicorn
-import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import load_model  # type: ignore
 from tensorflow.keras.layers import Layer  # type: ignore
 import tensorflow.keras.backend as K  # type: ignore
 import pickle
-import json
-import asyncio
-from convert_data import convertData
-from collections import Counter
 
 
 @tf.keras.utils.register_keras_serializable(package="Custom", name="Attention")
