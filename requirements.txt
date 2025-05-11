@@ -2,3 +2,4 @@ tensorflow
 pika
 numpy 
 pandas
+scikit-learn
