@@ -115,9 +115,8 @@ def start_server():
 
     try:
         print("🚀 Server AI sẵn sàng chờ dữ liệu...")
-        connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host=ip_server_backend)
-        )
+        parameters = pika.URLParameters(ip_server_backend)
+        connection = pika.BlockingConnection(parameters)
         channel = connection.channel()
 
         # bắt đầu nhận dữ liệu từ processing.queue
