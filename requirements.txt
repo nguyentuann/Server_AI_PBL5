@@ -2,4 +2,5 @@ tensorflow
 pika
 numpy 
 pandas
+fastapi
 scikit-learn==1.6.1
