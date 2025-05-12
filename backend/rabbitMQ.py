@@ -15,7 +15,7 @@ from AI.model_count import squat_count
 from AI.convert_data import convertData
 from constant.labels import labels_dict
 
-ip_server_backend = "192.168.33.183"
+ip_server_backend = "amqps://uwsuamrb:nXsf-6FMy-ePOZhKq4TyfWOH4h0YB1Rq@fuji.lmq.cloudamqp.com/uwsuamrb"
 
 CORRECT = np.int64(0)
 ERROR_BACK_BEND = np.int64(5)
