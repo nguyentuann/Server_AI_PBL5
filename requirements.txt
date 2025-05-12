@@ -3,4 +3,5 @@ pika
 numpy 
 pandas
 fastapi
+uvicorn
 scikit-learn==1.6.1
