@@ -150,7 +150,5 @@ def start_server():
         channel.start_consuming()
     except KeyboardInterrupt:
         print("🛑 Ngắt kết nối RabbitMQ")
-        connection.close()
     except Exception as e:
         print(f"❌ Lỗi kết nối RabbitMQ: {e}")
-        connection.close()
