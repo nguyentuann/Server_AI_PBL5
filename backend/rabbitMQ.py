@@ -123,7 +123,7 @@ def cleanup_inactive_users():
                 inactive_users.append(user_id)
 
         for user_id in inactive_users:
-            print(f"⏱️ User {user_id} không hoạt động > 1 phút. Reset count.")
+            print(f"⏱️ User {user_id} không hoạt động > 30st. Reset count.")
             user_reps.pop(user_id, None)
             user_last_data.pop(user_id, None)
 
@@ -140,6 +140,7 @@ def start_server():
         connection = pika.BlockingConnection(parameters)
         channel = connection.channel()
 
+        print("chay luong reset user")
         threading.Thread(target=cleanup_inactive_users, daemon=True).start()
         
         # bắt đầu nhận dữ liệu từ processing.queue
