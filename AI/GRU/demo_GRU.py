@@ -1,5 +1,7 @@
 import os
 
+import joblib
+
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = (
     "2"  # 0 = all logs, 1 = filter INFO, 2 = filter WARNING, 3 = only ERROR
 )
@@ -44,11 +46,11 @@ class Attention(Layer):
 
 
 # Load model Keras và scaler
-scaler_path = "scaler_GRU.pkl"
-model_path = "Squat_detection_GRU.keras"
+scaler_path = "scaler_GRU_LOSO.pkl"
+model_path = "Squat_detection_GRU_LOSO.keras"
 
 with open(scaler_path, "rb") as f:
-    scaler = pickle.load(f)
+    scaler = joblib.load(f)
 
 model = load_model(model_path)  # Load model Keras
 
@@ -70,17 +72,15 @@ mp_pose = mp.solutions.pose
 pose = mp_pose.Pose()
 
 # Đọc video đầu vào
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture("D:\Server_AI_PBL5\data\Thanh_demo.mp4")
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
 
 # Lấy thông tin video
 frame_width = int(cap.get(3))
 frame_height = int(cap.get(4))
 fps = int(cap.get(cv2.CAP_PROP_FPS))
 
-# Tạo VideoWriter để lưu video đầu ra
-output_path = "Demo/GRU_output_video1.mp4"
-fourcc = cv2.VideoWriter_fourcc(*"mp4v")  # Định dạng MP4
-out = cv2.VideoWriter(output_path, fourcc, fps, (frame_width, frame_height))
 from collections import Counter
 
 frame_window = fps * 2  # Số frame trong 3 giây
@@ -96,6 +96,7 @@ labels_dict = {
     4: "Xuong qua sau",
     5: "Lung gap",
 }
+label_counts = {}
 
 while cap.isOpened():
     ret, frame = cap.read()
@@ -138,6 +139,7 @@ while cap.isOpened():
         if len(label_buffer) >= frame_window:
             most_common_label = Counter(label_buffer).most_common(1)[0][0]
             display_label = labels_dict.get(most_common_label, "Unknown")
+            label_counts[display_label] = label_counts.get(display_label, 0) + 1
             print(label_buffer)
             label_buffer.clear()  # Reset sau mỗi 3 giây
 
@@ -151,18 +153,15 @@ while cap.isOpened():
             (0, 255, 0),
             2,
         )
-
-        # In xác suất của từng lớp
-        # print(f"Frame: {label_text}, Xác suất: {probabilities}")
-
-    # Ghi frame có nhãn vào video output
-    out.write(frame)
-
     cv2.imshow("Video", frame)
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
+    
+print("Tổng kết số lần hiển thị từng nhãn:")
+for label, count in label_counts.items():
+    print(f"{label}: {count} lần")
 
 # Giải phóng tài nguyên
 cap.release()
-out.release()
+# out.release()
 cv2.destroyAllWindows()

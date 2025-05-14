@@ -7,6 +7,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import json
 import pika
 import time
+import threading
 import numpy as np
 from collections import Counter
 
@@ -19,6 +20,7 @@ ip_server_backend = "amqps://uwsuamrb:nXsf-6FMy-ePOZhKq4TyfWOH4h0YB1Rq@fuji.lmq.
 
 CORRECT = np.int64(0)
 ERROR_BACK_BEND = np.int64(5)
+TIMEOUT_SECONDS = 60
 
 # RabbitMQ cấu hình
 
@@ -32,6 +34,7 @@ RESULT_QUEUE = "gympose.ai.result.backend"
 RESULT_EXCHANGE_NAME = "gympose.ai.result.direct"
 
 user_reps = {}
+user_last_data = {}
 
 
 def process_keypoints(ch, method, props, body):
@@ -42,7 +45,8 @@ def process_keypoints(ch, method, props, body):
         json_message = json.loads(message)
         keypoints = json_message["key_points"]
         user_id = json_message["user_id"]
-
+        
+        user_last_data[user_id] = time.time()
         count = user_reps.get(user_id, 0)
 
         features = convertData(keypoints)
@@ -89,6 +93,7 @@ def process_keypoints(ch, method, props, body):
                     "time": time.ctime(),
                     "user_id": user_id,
                 }
+                
 
                 # Gửi kết quả về result.queue thông qua exchange
                 ch.basic_publish(
@@ -108,6 +113,22 @@ def process_keypoints(ch, method, props, body):
         print(f"❌ Lỗi xử lý message: {e}")
         ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
 
+def cleanup_inactive_users():
+    while True:
+        current_time = time.time()
+        inactive_users = []
+
+        for user_id, last_seen in list(user_last_data.items()):
+            if current_time - last_seen > TIMEOUT_SECONDS:
+                inactive_users.append(user_id)
+
+        for user_id in inactive_users:
+            print(f"⏱️ User {user_id} không hoạt động > 1 phút. Reset count.")
+            user_reps.pop(user_id, None)
+            user_last_data.pop(user_id, None)
+
+        time.sleep(10)  # kiểm tra mỗi 10 giây
+        
 
 def start_server():
     connection = None
@@ -119,6 +140,8 @@ def start_server():
         connection = pika.BlockingConnection(parameters)
         channel = connection.channel()
 
+        threading.Thread(target=cleanup_inactive_users, daemon=True).start()
+        
         # bắt đầu nhận dữ liệu từ processing.queue
         channel.basic_consume(
             queue=PROCESSING_QUEUE, on_message_callback=process_keypoints

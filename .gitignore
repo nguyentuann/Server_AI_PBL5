@@ -7,3 +7,8 @@ test/
 cache/
 
 FE/
+
+data/
+
+AI/GRU/scaler_GRU_LOSO.pkl
+AI/GRU/Squat_detection_GRU_LOSO.keras
