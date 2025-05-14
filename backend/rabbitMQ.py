@@ -20,7 +20,7 @@ ip_server_backend = "amqps://uwsuamrb:nXsf-6FMy-ePOZhKq4TyfWOH4h0YB1Rq@fuji.lmq.
 
 CORRECT = np.int64(0)
 ERROR_BACK_BEND = np.int64(5)
-TIMEOUT_SECONDS = 60
+TIMEOUT_SECONDS = 30
 
 # RabbitMQ cấu hình
 
