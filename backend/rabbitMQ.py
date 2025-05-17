@@ -16,7 +16,8 @@ from AI.model_count import squat_count
 from AI.convert_data import convertData
 from constant.labels import labels_dict
 
-ip_server_backend = "amqps://uwsuamrb:nXsf-6FMy-ePOZhKq4TyfWOH4h0YB1Rq@fuji.lmq.cloudamqp.com/uwsuamrb"
+# ip_server_backend = "amqps://uwsuamrb:nXsf-6FMy-ePOZhKq4TyfWOH4h0YB1Rq@fuji.lmq.cloudamqp.com/uwsuamrb"
+ip_server_backend = "192.168.148.149"
 
 CORRECT = np.int64(0)
 ERROR_BACK_BEND = np.int64(5)
@@ -34,17 +35,19 @@ RESULT_QUEUE = "gympose.ai.result.backend"
 RESULT_EXCHANGE_NAME = "gympose.ai.result.direct"
 
 user_reps = {}
+user_labels = {}
 user_last_data = {}
-
+ 
 
 def process_keypoints(ch, method, props, body):
-    labels_count = []
 
     try:
         message = body.decode()
         json_message = json.loads(message)
         keypoints = json_message["key_points"]
         user_id = json_message["user_id"]
+        
+        labels_count = user_labels.setdefault(user_id, [])
         
         user_last_data[user_id] = time.time()
         count = user_reps.get(user_id, 0)
@@ -86,12 +89,25 @@ def process_keypoints(ch, method, props, body):
 
                 error_message = labels_dict.get(most_common_label, "Unknown")
                 print(f"⚠️ Lỗi phổ biến: {error_message}")
+                
+                # lấy labels_count giữa nhất giống với most_common_label
+                print(f"🧠 labels_count: {labels_count}")
+                middle_idx = None
+                if most_common_label in labels_count:
+                    # Tìm tất cả vị trí của most_common_label trong labels_count
+                    label_indices = [i for i, label in enumerate(labels_count) if label == most_common_label]
+                    if label_indices:
+                        # Tìm vị trí ở giữa nhất
+                        mid_point = len(labels_count) // 2
+                        middle_idx = min(label_indices, key=lambda idx: abs(idx - mid_point))
+                        print(f"📊 Vị trí giữa nhất của lỗi {error_message}: {middle_idx}")
 
                 result = {
                     "rep_num": count,
                     "content": error_message,
                     "time": time.ctime(),
                     "user_id": user_id,
+                    "image_id": middle_idx,
                 }
                 
 
@@ -101,10 +117,11 @@ def process_keypoints(ch, method, props, body):
                     routing_key=RESULT_ROUTING,
                     body=json.dumps(result),
                 )
-                labels_count.clear()
+                user_labels.pop(user_id, None)
                 return
             else:
-                pass
+                error_message = labels_dict.get(most_common_label, "Unknown")
+                print(f"⚠️ Lỗi phổ biến: {error_message}")
 
         # Xác nhận đã xử lý
         ch.basic_ack(delivery_tag=method.delivery_tag)
@@ -136,7 +153,13 @@ def start_server():
 
     try:
         print("🚀 Server AI sẵn sàng chờ dữ liệu...")
-        parameters = pika.URLParameters(ip_server_backend)
+        # parameters = pika.URLParameters(ip_server_backend)
+        parameters = pika.ConnectionParameters(
+            host=ip_server_backend,
+            port=5672,  # Port mặc định của RabbitMQ
+            virtual_host="/",  # Virtual host mặc định
+            credentials=pika.PlainCredentials("guest", "guest")  # Hoặc thông tin tài khoản thật nếu có
+        )
         connection = pika.BlockingConnection(parameters)
         channel = connection.channel()
 
