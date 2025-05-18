@@ -45,6 +45,7 @@ def process_keypoints(ch, method, props, body):
         json_message = json.loads(message)
         keypoints = json_message["key_points"]
         user_id = json_message["user_id"]
+        session_id = json_message["session_id"]
         
         labels_count = user_labels.setdefault(user_id, [])
         
@@ -106,6 +107,7 @@ def process_keypoints(ch, method, props, body):
                     "content": error_message,
                     "time": time.ctime(),
                     "user_id": user_id,
+                    "session_id": session_id,
                     # "image_id": middle_idx,
                 }
                 
