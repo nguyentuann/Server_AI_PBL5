@@ -1,4 +1,3 @@
-tensorflow 
 pika
 numpy 
 pandas

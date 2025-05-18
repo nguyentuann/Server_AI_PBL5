@@ -16,8 +16,8 @@ from AI.model_count import squat_count
 from AI.convert_data import convertData
 from constant.labels import labels_dict
 
-# ip_server_backend = "amqps://uwsuamrb:nXsf-6FMy-ePOZhKq4TyfWOH4h0YB1Rq@fuji.lmq.cloudamqp.com/uwsuamrb"
-ip_server_backend = "192.168.148.149"
+ip_server_backend = "amqps://uwsuamrb:nXsf-6FMy-ePOZhKq4TyfWOH4h0YB1Rq@fuji.lmq.cloudamqp.com/uwsuamrb"
+# ip_server_backend = "192.168.148.149"
 
 CORRECT = np.int64(0)
 ERROR_BACK_BEND = np.int64(5)
@@ -107,7 +107,7 @@ def process_keypoints(ch, method, props, body):
                     "content": error_message,
                     "time": time.ctime(),
                     "user_id": user_id,
-                    "image_id": middle_idx,
+                    # "image_id": middle_idx,
                 }
                 
 
