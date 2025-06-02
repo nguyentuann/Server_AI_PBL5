@@ -15,8 +15,8 @@ from AI.model_count import squat_count
 from AI.convert_data import convertData
 from constant.labels import labels_dict
 
-ip_server_backend = "amqps://uwsuamrb:nXsf-6FMy-ePOZhKq4TyfWOH4h0YB1Rq@fuji.lmq.cloudamqp.com/uwsuamrb"
-# ip_server_backend = "192.168.35.214"
+ip_rabbit_mq = "amqps://uwsuamrb:nXsf-6FMy-ePOZhKq4TyfWOH4h0YB1Rq@fuji.lmq.cloudamqp.com/uwsuamrb"
+# ip_rabbit_mq = "192.168.1.4"
 
 CORRECT = np.int64(0)
 ERROR_BACK_BEND = np.int64(5)
@@ -141,9 +141,9 @@ def start_server():
 
     try:
         print("🚀 Server AI sẵn sàng chờ dữ liệu...")
-        parameters = pika.URLParameters(ip_server_backend)
+        parameters = pika.URLParameters(ip_rabbit_mq)
         # parameters = pika.ConnectionParameters(
-        #     host=ip_server_backend,
+        #     host=ip_rabbit_mq,
         #     port=5672,  # Port mặc định của RabbitMQ
         #     virtual_host="/",  # Virtual host mặc định
         #     credentials=pika.PlainCredentials("guest", "guest")  # Hoặc thông tin tài khoản thật nếu có

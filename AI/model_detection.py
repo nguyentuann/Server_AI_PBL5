@@ -42,8 +42,8 @@ class Attention(Layer):
 class SquatDetectionModel:
     def __init__(
         self,
-        scaler_path = os.path.join(os.path.dirname(__file__), ".", "GRU", "scaler_GRU.pkl"),
-        model_path=os.path.join(os.path.dirname(__file__), ".", "GRU", "Squat_detection_GRU.keras"),
+        scaler_path = os.path.join(os.path.dirname(__file__), ".", "GRU", "scaler_GRU_LOSO.pkl"),
+        model_path=os.path.join(os.path.dirname(__file__), ".", "GRU", "Squat_detection_GRU_LOSO.keras"),
     ):
         self.scaler = self.load_scaler(scaler_path)
         self.model = self.load_model(model_path)
